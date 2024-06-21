@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> YF-YourFinanace</title>
+    <link rel="icon" href="assets/img/logoOFC.png">
+    <link rel="stylesheet" href="assets/css/painelControleMetas.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <script src="assets/js/painelControleMetas.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <header class="header">
+        <div class="interface">
+            <div class="logo">
+                <img src="assets/img/logoOFC.png" alt="logoYF">
+            </div>
+            <nav class="menu-desktop">
+                <div class="txt-topo-site">
+                    <i class="bi bi-bell corner-icon"></i>
+                    <i class="bi bi-cash corner-icon"></i>
+                    <h2 class="titulo">PERFIL</h2>
+                    <ul>
+                        <li><a href="#">Painel de Controle</a></li>
+                        <li><a href="#">Metas</a></li>
+                        <li><a href="#">Contas</a></li>
+                        <li><a href="#">Despesas</a></li>
+                        <li><a href="#">Menu</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="painel">
+            <div class="interface">
+                <div class="topo_painel">
+                    <h1>Painel de Controle</h1>
+                    <h3>Relatório</h3>
+                </div>
+        </section>
+        <section>
+            <div class="interface">
+                <div class="quadroGraph">
+                    <div class="grafico" id="grafico">
+                        <!DOCTYPE html>
+                        <script>
+                            const n = 4;
+                            const m = 58;
+                            const yz = d3.transpose(d3.range(n).map(() => bumps(m)));
+                            const xz = d3.range(m);
+                            const chart = () => {
+                                const width = 928,
+                                    height = 500,
+                                    marginTop = 0,
+                                    marginRight = 0,
+                                    marginBottom = 10,
+                                    marginLeft = 0;
+                                const y01z = d3.stack()
+                                    .keys(d3.range(n))
+                                    .value(([, y1]) => y1)
+                                    .order(d3.stackOrderNone)
+                                    .offset(d3.stackOffsetNone)
+                                    (d3.transpose(yz))
+                                    .map((data, i) => data.map(([y0, y1]) => [y0, y1, i]));
+                                const yMax = d3.max(yz, y => d3.max(y));
+                                const y1Max = d3.max(y01z, y => d3.max(y, d => d[1]));
+                                const x = d3.scaleBand()
+                                    .domain(xz)
+                                    .rangeRound([marginLeft, width - marginRight])
+                                    .padding(0.08);
+                                const y = d3.scaleLinear()
+                                    .domain([0, y1Max])
+                                    .range([height - marginBottom, marginTop]);
+                                const color = d3.scaleSequential(d3.interpolatePurples)
+                                    .domain([-0.5 * n, 1.5 * n]);
+                                const svg = d3.create("svg")
+                                    .attr("viewBox", [0, 0, width, height])
+                                    .attr("width", width)
+                                    .attr("height", height)
+                                    .attr("style", "max-width: 100%; height: auto;");
+                                const rect = svg.selectAll("g")
+                                    .data(y01z)
+                                    .join("g")
+                                    .attr("fill", (d, i) => color(i))
+                                    .selectAll("rect")
+                                    .data(d => d)
+                                    .join("rect")
+                                    .attr("x", (d, i) => x(i))
+                                    .attr("y", height - marginBottom)
+                                    .attr("width", x.bandwidth())
+                                    .attr("height", 0);
+                                svg.append("g")
+                                    .attr("transform", `translate(0,${height - marginBottom})`)
+                                    .call(d3.axisBottom(x).tickSizeOuter(0).tickFormat(() => ""));
+                                function transitionGrouped() {
+                                    y.domain([0, yMax]);
+                                    rect.transition()
+                                        .duration(500)
+                                        .delay((d, i) => i * 20)
+                                        .attr("x", (d, i) => x(i) + x.bandwidth() / n * d[2])
+                                        .attr("width", x.bandwidth() / n)
+                                        .transition()
+                                        .attr("y", d => y(d[1] - d[0]))
+                                        .attr("height", d => y(0) - y(d[1] - d[0]));
+                                }
+                                function transitionStacked() {
+                                    y.domain([0, y1Max]);
+                                    rect.transition()
+                                        .duration(500)
+                                        .delay((d, i) => i * 20)
+                                        .attr("y", d => y(d[1]))
+                                        .attr("height", d => y(d[0]) - y(d[1]))
+                                        .transition()
+                                        .attr("x", (d, i) => x(i))
+                                        .attr("width", x.bandwidth());
+                                }
+                                function update(layout) {
+                                    if (layout === "stacked") transitionStacked();
+                                    else transitionGrouped();
+                                }
+                                return Object.assign(svg.node(), { update });
+                            };
+                            const bumps = (m) => {
+                                const values = [];
+                                for (let i = 0; i < m; ++i) {
+                                    values[i] = 0.1 + 0.1 * Math.random();
+                                }
+                                for (let j = 0; j < 5; ++j) {
+                                    const x = 1 / (0.1 + Math.random());
+                                    const y = 2 * Math.random() - 0.5;
+                                    const z = 10 / (0.1 + Math.random());
+                                    for (let i = 0; i < m; i++) {
+                                        const w = (i / m - y) * z;
+                                        values[i] += x * Math.exp(-w * w);
+                                    }
+                                }
+                                for (let i = 0; i < m; ++i) {
+                                    values[i] = Math.max(0, values[i]);
+                                }
+                                return values;
+                            };
+                            const svg = d3.select("#chart")
+                                .call(chart);
+                            svg.on("click", () => {
+                                svg.call(chart(Math.random() > 0.5 ? "grouped" : "stacked"));
+                            });
+                        </script>
+                    </div>
+                    <div class="grapOps">
+                        <div class="btnMes">
+                            <select name="intervalo" id="intervaloMes" onchange="atualizarGrafico()">
+                                <option value="mes" selected>Mensal</option>
+                                <option value="Jan">Janeiro</option>
+                                <option value="Fev">Fevereiro</option>
+                                <option value="Mar">Março</option>
+                                <option value="Abr">Abril</option>
+                                <option value="Mai">Maio</option>
+                                <option value="Jun">Junho</option>
+                                <option value="Jul">Julho</option>
+                                <option value="Ago">Agosto</option>
+                                <option value="Set">Setembro</option>
+                                <option value="Out">Outubro</option>
+                                <option value="Nov">Novembro</option>
+                                <option value="Dez">Dezembro</option>
+                            </select>
+                            <div class="btnSemana">
+                                <select name="intervalo" id="intervaloSemanal" onchange="atualizarGrafico()">
+                                    <option value="semana">Semanal</option>
+                                    <option value="1">Semana 1</option>
+                                    <option value="2">Semana 2</option>
+                                    <option value="3">Semana 3</option>
+                                    <option value="4">Semana 4</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="painel">
+            <div class="topo_painel">
+                <h1>METAS</h1>
+            </div>
+        </section>
+        <section>
+            <div class="interface">
+                <div class="painelMetas">
+                    <div class="metaInfo">
+                        <div class="relatorioMetas">
+                            <h2>Relatório de Metas</h2>
+                            <p>Descrição das metas e progresso.</p>
+                            <div class="center">
+                                <button id="show-meta">Adicionar Meta</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="barrasProgresso">
+                        <!-- Metas serão adicionadas aqui dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="popup" class="popup">
+            <div class="popup-content">
+                <div class="btn-fechar">&times;</div>
+                <div class="inputMeta">
+                    <h2 id="popup-title">Adicionar Meta</h2>
+                    <form id="formMeta">
+                        <label for="metaNome">Nome da Meta:</label>
+                        <input type="text" id="metaNome" name="metaNome" required>
+                        <label for="metaValorMax">Valor Máximo Desejado:</label>
+                        <input type="number" id="metaValorMax" name="metaValorMax" min="0" required>
+                        <button type="submit">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="script.js"></script>
+        <footer>
+            <div class="footer-content">
+                <img src="assets/img/logoOFC.png" alt="Logo" class="logo">
+                <div class="links">
+                    <a href="#" class="email-link">Email</a>
+                    <a href="#" class="instagram-link">Instagram</a>
+                </div>
+            </div>
+        </footer>
+        <script src="script.js"></script>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/assets/js/painelControleMetas.js"></script>
+</body>
+</html>
